@@ -1,91 +1,94 @@
-const express = require("express");
-const bodyParser = require("body-parser");
-const cors = require("cors");
-const app = express();
+/**Import our dependencies */
+const express = require("express")
+const cors = require("cors")
+const bodyParser = require("body-parser")
+const mysql = require("mysql2")
+const e = require("express")
 
-/**Connect app to mysql db */
-const mysql = require("mysql2");
-const db = mysql.createPool({
-    host: "localhost",
-    user: "root",
-    password: "12345678",
-    database: "contact_database"
+/**create an object from express */
+const app = express()
+
+/**tell what our app to use */
+app.use(cors())
+app.use(express.json())
+app.use(bodyParser.urlencoded({extended:true}))
+
+/**Lets run our api on port 7000 */
+app.listen(7070, ()=>{
+    console.log("Ourn API is running")
 })
 
-app.use(cors());
-app.use(express.json());
-app.use(bodyParser.urlencoded({extended: true}));
+ /**connect database to our project */
+ const db = mysql.createPool({
+    host:"localhost",
+    user:"root",
+    password:"12345678",
+    database:"contact_database"
+ })
 
-/**Api to get all contacts from database */
-app.get("/api/get", (req, res)=>{
-    const getQuery = "SELECT * FROM contact_table";
-    db.query(getQuery, (error, result)=>{
-        res.send(result);
-    })
-});
-/**Add a contact API */
-app.post("/api/add", (req, res)=>{
-    const {name, email, contact} = req.body;
-    const insertQuery = "INSERT INTO contact_table (name, email, contact) VALUES (?,?,?)";
-    db.query(insertQuery, [name, email, contact], (error, result)=>{
-        if (error) {
-            console.error(error);
-        }else{
-            console.log(result);
-            res.send(result);
-        }
-    })
-});
-/**Delete a contact by id */
-app.delete("/api/remove/:id", (req, res)=>{
-    const myid = req.params.id;
-    const deleteSQL = "DELETE FROM contact_table WHERE id = ?";
-    db.query(deleteSQL, myid, (err, result)=>{
-        if(err){
-            console.error(err)
-        }else{
-            res.send(result);
-        }
-    })
-});
-
-/**Get single contact by id */
-app.get("/api/single/:id", (req, res)=>{
-    const myID = req.params.id;
-    const getSingleDataQuery = "select * from contact_table where id = ?";
-    db.query(getSingleDataQuery, [myID], (err, result)=>{
-        if(err){
-            console.error(err)
-        }else{
-            res.send(result);
-        }
-    });
-});
-
-/**Update single contact by id */
-app.put("/api/update/:id", (req, res)=>{
-    const id = req.params.id;
-    const {name, email, contact} = req.body;
-    const updateQuery = "update contact_table set name = ?, email = ?, contact = ? where id = ? ";
-    db.query(updateQuery, [name, email, contact, id], (err, result)=>{
+ /**GET all contact API */
+ app.get("/getall", (req, res)=>{
+    const getAllContacts = "select * from contact_table";
+    db.query(getAllContacts, (err, result)=>{
         if(!err){
-            res.send(result);
+            res.send(result)
         }else{
-            console.error(err);
+            console.error(err)
         }
-    });
-})
+    })
+ })
+ /**API to add a contact */
 
-app.get("/", (req, res)=>{
-    /**Test connection */
-    // const sqlInsert = "INSERT INTO contact_table (name, email, contact) VALUES ('dennis', 'dennis@gmail.com','090896978567')";
-    // db.query(sqlInsert, (error, result)=>{
-    //     console.log('error: ', error);
-    //     console.log('result:', result);
-    //     res.send("hello everyone");
-    // })
-});
+ app.post("/add", (req, res)=>{
+    const {name, email, phone_no} = req.body;
+    const addQuery = "insert into contact_table (name, email, phone_no) values (?,?,?)"
+    db.query(addQuery, [name, email, phone_no], (err, result)=>{
+        if(!err){
+            res.send("Succesfully added a contact")
+        }else{
+            console.error(err)
+        }
+    })
+ })
 
-app.listen(7000, ()=>{
-    console.log("server is running hahah");
-})
+ /**API to get single contact by id */
+ app.get("/getsingle/:id", (req, res)=>{
+    const id = req.params.id
+    const getsingleContact = "select * from contact_table where id = ?";
+    db.query(getsingleContact, [id], (err, result)=>{
+        if (!err) {
+            res.send(result)
+        }else{
+            res.send("User not found")
+        }
+    })
+ })
+
+ /**API to update a contact */
+ app.put("/update/:id", (req, res)=>{
+    const id = req.params.id;
+    const {name, email, phone_no} = req.body
+    const updateQuery = "UPDATE contact_table SET name = ?, email = ?, phone_no = ? WHERE id = ?";
+    db.query(updateQuery, [name,email,phone_no,id], (err, result)=>{
+        if(!err){
+            res.send(result)
+        }else{
+            console.log(err)
+        }
+    })
+ })
+
+ /**API to delete contact */
+ app.delete("/delete/:id", (req, res)=>{
+    const id = req.params.id;
+    const deleteQuery = "delete from contact_table where id = ?"
+    db.query(deleteQuery, [id], (err, result)=>{
+        if (!err) {
+            res.send("Succesfully deleted this contact")
+        }else{
+            res.send("Hasn't been deleted! Try again")
+        }
+    })
+ })
+
+
